@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+release/
+
+# App data (SQLite DB, logs, backups)
+.data/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# SQLite files
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+logs/
+
+# Editor
+.DS_Store
+Thumbs.db
+.vscode/settings.json

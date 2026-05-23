@@ -1,0 +1,48 @@
+appId: com.ctools.app
+productName: CTools
+copyright: CTools
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/electron/**
+  - "!dist/server/**"
+  - "!dist/frontend/**"
+
+extraResources:
+  - from: dist/server
+    to: server
+    filter:
+      - "**/*"
+  - from: dist/frontend
+    to: frontend
+    filter:
+      - "**/*"
+  - from: node_modules/better-sqlite3
+    to: node_modules/better-sqlite3
+    filter:
+      - "**/*"
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.ico
+
+linux:
+  icon: resources/icon.png
+  category: Utility
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  runAfterFinish: true
+
+publish:
+  provider: github
+  owner: mncolla
+  repo: ctools
