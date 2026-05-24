@@ -46,3 +46,4 @@ publish:
   provider: github
   owner: mncolla
   repo: ctools
+  draft: false
