@@ -1,7 +1,11 @@
 import { app } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import { createTray } from './tray'
 import { setupUpdater } from './updater'
+import { createDebugWindow } from './debug'
+
+const { ipcMain } = require('electron')
 
 function getServerPath(): string {
   return app.isPackaged
@@ -67,6 +71,18 @@ function startServer() {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle('debug:read-log-file', async () => {
+    try {
+      const logPath = path.join(app.getPath('userData'), 'logs', 'server.log')
+      if (!fs.existsSync(logPath)) {
+        return 'Archivo de log no encontrado'
+      }
+      return fs.readFileSync(logPath, 'utf-8')
+    } catch (err) {
+      return `Error al leer log: ${err instanceof Error ? err.message : err}`
+    }
+  })
+
   createTray()
   startServer()
   setupUpdater()
