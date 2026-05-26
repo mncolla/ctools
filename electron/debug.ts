@@ -18,8 +18,10 @@ export function createDebugWindow() {
     },
   })
 
-  const debugHtmlPath = `file://${path.join(__dirname, '../electron/debug-window.html')}`
-  debugWindow.loadURL(debugHtmlPath)
+  const debugHtmlPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'electron', 'debug-window.html')
+    : path.join(__dirname, '..', 'debug-window.html')
+  debugWindow.loadFile(debugHtmlPath)
 
   debugWindow.on('closed', () => {
     debugWindow = null

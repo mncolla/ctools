@@ -8,6 +8,7 @@ directories:
 
 files:
   - dist/electron/**
+  - electron/debug-window.html
   - "!dist/server/**"
   - "!dist/frontend/**"
 
