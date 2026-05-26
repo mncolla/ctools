@@ -22,6 +22,14 @@ function startServer() {
   const serverPath = getServerPath()
   const dataDir = app.getPath('userData')
   const frontendDir = getFrontendPath()
+  const logsDir = path.join(dataDir, 'logs')
+  const logFile = path.join(logsDir, 'server.log')
+
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true })
+  }
+
+  const logStream = fs.createWriteStream(logFile, { flags: 'a' })
 
   console.log('[main:boot] Iniciando servidor')
   console.log(`[main:boot] Server path: ${serverPath}`)
@@ -43,12 +51,18 @@ function startServer() {
 
   serverProc.stdout?.on('data', (data: Buffer) => {
     const msg = data.toString().trim()
-    if (msg) console.log('[server]', msg)
+    if (msg) {
+      console.log('[server]', msg)
+      logStream.write(`${msg}\n`)
+    }
   })
 
   serverProc.stderr?.on('data', (data: Buffer) => {
     const msg = data.toString().trim()
-    if (msg) console.error('[server:err]', msg)
+    if (msg) {
+      console.error('[server:err]', msg)
+      logStream.write(`${msg}\n`)
+    }
   })
 
   serverProc.on('message', (msg: { type: string; port?: number }) => {
@@ -59,6 +73,7 @@ function startServer() {
 
   serverProc.on('exit', (code: number) => {
     console.error(`[main:err] Servidor terminó con código ${code}`)
+    logStream.end()
     if (code !== 0) {
       console.log('[main:boot] Reiniciando en 3 segundos...')
       setTimeout(startServer, 3000)
