@@ -1,11 +1,9 @@
-import { app } from 'electron'
+import { app, ipcMain } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { createTray } from './tray'
 import { setupUpdater } from './updater'
 import { createDebugWindow } from './debug'
-
-const { ipcMain } = require('electron')
 
 function getServerPath(): string {
   return app.isPackaged
