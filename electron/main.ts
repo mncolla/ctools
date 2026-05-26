@@ -18,36 +18,47 @@ function getFrontendPath(): string {
 function startServer() {
   const { utilityProcess } = require('electron')
   const serverPath = getServerPath()
+  const dataDir = app.getPath('userData')
+  const frontendDir = getFrontendPath()
+
+  console.log('[main:boot] Iniciando servidor')
+  console.log(`[main:boot] Server path: ${serverPath}`)
+  console.log(`[main:boot] Data dir: ${dataDir}`)
+  console.log(`[main:boot] Frontend dir: ${frontendDir}`)
 
   const serverProc = utilityProcess.fork(serverPath, [], {
     env: {
       ...process.env,
-      DATA_DIR: app.getPath('userData'),
-      FRONTEND_DIR: getFrontendPath(),
+      DATA_DIR: dataDir,
+      FRONTEND_DIR: frontendDir,
       PORT: '3000',
       APP_VERSION: app.getVersion(),
       JWT_SECRET: `jwt-${app.getVersion()}-${Date.now()}`,
+      NODE_ENV: 'production',
     },
     stdio: 'pipe',
   })
 
   serverProc.stdout?.on('data', (data: Buffer) => {
-    console.log('[server]', data.toString().trim())
+    const msg = data.toString().trim()
+    if (msg) console.log('[server]', msg)
   })
 
   serverProc.stderr?.on('data', (data: Buffer) => {
-    console.error('[server:err]', data.toString().trim())
+    const msg = data.toString().trim()
+    if (msg) console.error('[server:err]', msg)
   })
 
-  serverProc.on('message', (msg: { type: string; port: number }) => {
-    if (msg.type === 'ready') {
-      console.log(`[main] Servidor listo en puerto ${msg.port}`)
+  serverProc.on('message', (msg: { type: string; port?: number }) => {
+    if (msg.type === 'ready' && msg.port) {
+      console.log(`[main:ok] Servidor listo en puerto ${msg.port}`)
     }
   })
 
   serverProc.on('exit', (code: number) => {
-    console.error(`[main] Servidor terminó con código ${code}`)
+    console.error(`[main:err] Servidor terminó con código ${code}`)
     if (code !== 0) {
+      console.log('[main:boot] Reiniciando en 3 segundos...')
       setTimeout(startServer, 3000)
     }
   })
