@@ -1,6 +1,7 @@
 import { Tray, Menu, nativeImage, shell, app } from 'electron'
 import path from 'path'
 import os from 'os'
+import { createDebugWindow } from './debug'
 
 function getLocalIP(): string {
   const nets = os.networkInterfaces()
@@ -47,6 +48,10 @@ export function createTray(): Tray {
     {
       label: `Dirección: ${url}`,
       enabled: false,
+    },
+    {
+      label: '📋 Diagnóstico',
+      click: () => createDebugWindow(),
     },
     { type: 'separator' },
     {
