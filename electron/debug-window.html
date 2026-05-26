@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTools — Diagnóstico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #2d2d2d;
+            border-bottom: 1px solid #3e3e3e;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-family: inherit;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #1177bb;
+        }
+
+        button:active {
+            background-color: #0d5a8f;
+        }
+
+        #logContainer {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background-color: #1e1e1e;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .log-boot {
+            color: #569cd6;
+        }
+
+        .log-ok {
+            color: #4ec9b0;
+        }
+
+        .log-err {
+            color: #f48771;
+        }
+
+        .log-migrate {
+            color: #dcdcaa;
+        }
+
+        .log-default {
+            color: #d4d4d4;
+        }
+
+        footer {
+            background-color: #2d2d2d;
+            border-top: 1px solid #3e3e3e;
+            padding: 8px 16px;
+            font-size: 11px;
+            color: #858585;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #4ec9b0;
+            margin-right: 6px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #464646;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a5a5a;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CTools — Diagnóstico</h1>
+        <div class="controls">
+            <button id="refreshBtn">🔄 Actualizar</button>
+            <button id="clearBtn">🗑️ Limpiar</button>
+        </div>
+    </header>
+
+    <div id="logContainer"></div>
+
+    <footer>
+        <span><span class="status-indicator"></span>Estado: conectado</span>
+        <span id="updateTime">Última actualización: nunca</span>
+    </footer>
+
+    <script>
+        const logContainer = document.getElementById('logContainer');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const updateTimeEl = document.getElementById('updateTime');
+
+        let autoRefreshInterval;
+
+        function formatTimestamp() {
+            const now = new Date();
+            return now.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function getLogClass(line) {
+            if (line.includes('[boot]')) return 'log-boot';
+            if (line.includes('[ok]')) return 'log-ok';
+            if (line.includes('[err]')) return 'log-err';
+            if (line.includes('[migrate]')) return 'log-migrate';
+            return 'log-default';
+        }
+
+        function displayLogs(content) {
+            logContainer.innerHTML = '';
+
+            if (!content || content.trim().length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'log-entry log-default';
+                emptyMessage.textContent = '(Sin logs disponibles)';
+                logContainer.appendChild(emptyMessage);
+                return;
+            }
+
+            const lines = content.split('\n');
+            lines.forEach(line => {
+                if (line.trim()) {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = `log-entry ${getLogClass(line)}`;
+                    logEntry.textContent = line;
+                    logContainer.appendChild(logEntry);
+                }
+            });
+
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateLogs() {
+            if (window.debugAPI && window.debugAPI.readLogFile) {
+                window.debugAPI.readLogFile().then(content => {
+                    displayLogs(content);
+                    updateTimeEl.textContent = `Última actualización: ${formatTimestamp()}`;
+                }).catch(err => {
+                    console.error('Error reading log file:', err);
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'log-entry log-err';
+                    errorDiv.textContent = `Error: ${err.message || err}`;
+                    logContainer.appendChild(errorDiv);
+                });
+            } else {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'log-entry log-err';
+                errorDiv.textContent = 'Error: window.debugAPI no disponible';
+                logContainer.innerHTML = '';
+                logContainer.appendChild(errorDiv);
+            }
+        }
+
+        function clearLogs() {
+            logContainer.innerHTML = '';
+            const message = document.createElement('div');
+            message.className = 'log-entry log-ok';
+            message.textContent = 'Logs limpios';
+            logContainer.appendChild(message);
+            updateTimeEl.textContent = `Última actualización: ${formatTimestamp()}`;
+        }
+
+        function startAutoRefresh() {
+            updateLogs();
+            autoRefreshInterval = setInterval(updateLogs, 1000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        }
+
+        refreshBtn.addEventListener('click', updateLogs);
+        clearBtn.addEventListener('click', clearLogs);
+
+        window.addEventListener('beforeunload', stopAutoRefresh);
+
+        startAutoRefresh();
+    </script>
+</body>
+</html>
