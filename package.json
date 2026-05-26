@@ -1,6 +1,6 @@
 {
   "name": "ctools",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Herramienta de gestión interna para tiendas",
   "main": "dist/electron/main.js",
   "private": true,
